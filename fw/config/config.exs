@@ -8,7 +8,9 @@ use Mix.Config
 # Customize non-Elixir parts of the firmware. See
 # https://hexdocs.pm/nerves/advanced-configuration.html for details.
 
-config :nerves, :firmware, rootfs_overlay: "rootfs_overlay"
+config :nerves, :firmware,
+  fwup_conf: "config/fwup.conf",
+  rootfs_overlay: "rootfs_overlay"
 
 # Use shoehorn to start the main application. See the shoehorn
 # docs for separating out critical OTP applications such as those
@@ -50,16 +52,24 @@ config :nerves_firmware_ssh,
 # Configure nerves_init_gadget.
 # See https://hexdocs.pm/nerves_init_gadget/readme.html for more information.
 
-# Setting the node_name will enable Erlang Distribution.
-# Only enable this for prod if you understand the risks.
-node_name = if Mix.env() != :prod, do: "fw"
-
 config :nerves_init_gadget,
-  ifname: "usb0",
-  address_method: :dhcpd,
-  mdns_domain: "nerves.local",
-  node_name: node_name,
-  node_host: :mdns_domain
+  ifname: "wlan0",
+  address_method: :dhcp,
+  mdns_domain: "baby_buttons.local",
+  node_name: nil,
+  node_host: :mdns_domain,
+  ssh_console_port: 22
+
+# For WiFi, set regulatory domain to avoid restrictive default
+config :nerves_network,
+  regulatory_domain: "US"
+
+config :nerves_network, :default,
+  wlan0: [
+    ssid: System.get_env("NERVES_NETWORK_SSID"),
+    psk: System.get_env("NERVES_NETWORK_PSK"),
+    key_mgmt: "WPA-PSK"
+  ]
 
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

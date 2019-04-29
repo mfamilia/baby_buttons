@@ -1,4 +1,4 @@
-defmodule Supervisors.Flic do
+defmodule Service.FlicSupervisor do
   use Supervisor
 
   def start_link(opts) do
@@ -8,13 +8,7 @@ defmodule Supervisors.Flic do
 
   def init(:ok) do
     children = [
-      {
-        MuonTrap.Daemon,
-        [
-          "/usr/bin/flicd",
-          ["-f", "/usr/bin/flicd/buttons.sqlite3"]
-        ]
-      }
+      {Service.Flic, []}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

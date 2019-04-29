@@ -1,7 +1,7 @@
 defmodule Fw.MixProject do
   use Mix.Project
 
-  @all_targets [:rpi, :rpi0, :rpi2, :rpi3, :rpi3a, :bbb, :x86_64]
+  @all_targets [:rpi, :rpi0, :rpi2, :rpi3, :rpi3a, :bbb, :x86_64, :ns_ble_rpi3]
 
   def project do
     [
@@ -39,6 +39,7 @@ defmodule Fw.MixProject do
       {:shoehorn, "~> 0.4"},
       {:ring_logger, "~> 0.6"},
       {:toolshed, "~> 0.2"},
+      {:bluetooth, path: "../bluetooth"},
       {:service, path: "../service"},
 
       # Dependencies for all targets except :host
@@ -53,6 +54,7 @@ defmodule Fw.MixProject do
       {:nerves_system_rpi3a, "~> 1.6", runtime: false, targets: :rpi3a},
       {:nerves_system_bbb, "~> 2.0", runtime: false, targets: :bbb},
       {:nerves_system_x86_64, "~> 1.6", runtime: false, targets: :x86_64},
+      {:ns_ble_rpi3, path: "../../ns_ble_rpi3", runtime: false, targets: :ns_ble_rpi3},
     ]
   end
 end
