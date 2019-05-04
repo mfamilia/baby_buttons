@@ -71,6 +71,11 @@ config :nerves_network, :default,
     key_mgmt: "WPA-PSK"
   ]
 
+config :service,
+  flic_host: '0.0.0.0',
+  flic_port: 5551,
+  flic_database_file: "/root/buttons.sqlite3"
+
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 # Uncomment to use target specific configurations

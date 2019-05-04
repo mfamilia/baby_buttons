@@ -1,45 +1,105 @@
 defmodule Service.Button do
   use GenServer
 
-  import Messages.GetInfo
+  alias Service.Flic.{
+    Request,
+    Response,
+    Client
+  }
+
+  import Request
+
+  import Response.{
+    GetInfo,
+    CreateChannel
+  }
+
+  import Service.Broadcast
   import ShorterMaps
 
-  def start_link(_args) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  require Logger
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, :ok, opts)
   end
 
   def init(:ok) do
-    {:ok, %{}}
+    listen_to(:flic_client_started)
+    listen_to(:flic_message_received)
+
+    {:ok, %{server: nil}}
   end
 
-  def connect() do
-    GenServer.cast(__MODULE__, :connect)
+  def handle_cast({:flic_client_started, s}, state) do
+    Logger.info("Client started")
+
+    :ok = Client.send(s, get_info_request())
+
+    {:noreply, %{state | server: s}}
   end
 
-  def handle_cast(:get_info, %{socket: s} = state) do
-    :ok = :gen_tcp.send(s, get_info_request())
-    {:ok, reply} = :gen_tcp.recv(s, 0)
+  def handle_cast({:flic_message_received, msg}, state) do
+    Logger.info("Message Received: #{inspect(msg)}")
 
-    msg =
-      :binary.list_to_bin(reply)
-      |> get_data()
-      |> get_info()
-      |> inspect()
+    {type, data} = get_parts(msg)
 
-    IO.puts(:stderr, msg)
+    action =
+      case type do
+        1 ->
+          :handle_create_channel_data
+
+        9 ->
+          :handle_get_info_data
+
+        _ ->
+          :handle_other_data
+      end
+
+    GenServer.cast(self(), {action, data})
 
     {:noreply, state}
   end
 
-  def handle_cast(:connect, _state) do
-    :timer.sleep(6000)
+  def handle_cast({:handle_get_info_data, data}, state) do
+    info = get_info_response(data)
 
-    {:ok, socket} = :gen_tcp.connect('127.0.0.1', 5551, [active: false])
+    Logger.info("Get Info: #{inspect(info)}")
 
-    GenServer.cast(self(), :get_info)
+    GenServer.cast(self(), {:create_button_channels, info})
 
-    {:noreply, ~M{socket}}
+    {:noreply, state}
   end
 
-  defp get_data(<< _ :: bytes-size(3), data :: binary >>), do: data
+  def handle_cast({:handle_create_channel_data, data}, state) do
+    info = create_channel_response(data)
+
+    Logger.info("Create Channel: #{inspect(info)}")
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:handle_other_data, data}, state) do
+    Logger.info("Other Data: #{inspect(data)}")
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:create_button_channels, ~M{button_addresses}}, state) do
+    %{server: s} = state
+
+    button_addresses
+    |> Enum.with_index()
+    |> Enum.each(fn {address, index} ->
+      request = create_channel_request(index, address)
+      Client.send(s, request)
+    end)
+
+    {:noreply, state}
+  end
+
+  defp get_parts(msg) do
+    <<opcode::size(8), data::binary>> = msg
+
+    {opcode, data}
+  end
 end

@@ -23,6 +23,7 @@ defmodule Bluetooth.MixProject do
   defp deps do
     [
       {:muontrap, "~> 0.4"},
+      {:nerves_ntp, git: "https://github.com/visciang/nerves_ntp.git", tag: "0.2.1"},
     ]
   end
 end

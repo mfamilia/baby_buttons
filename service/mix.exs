@@ -16,7 +16,7 @@ defmodule Service.MixProject do
   def application do
     [
       mod: {Service.Application, []},
-      extra_applications: [:logger],
+      extra_applications: [:logger]
     ]
   end
 
@@ -24,9 +24,10 @@ defmodule Service.MixProject do
   defp deps do
     [
       {:muontrap, "~> 0.4"},
-      { :uuid, "~> 1.1" },
+      {:uuid, "~> 1.1"},
       {:socket, "~> 0.3"},
       {:shorter_maps, "~> 2.0"},
+      {:connection, "~> 1.0"}
     ]
   end
 

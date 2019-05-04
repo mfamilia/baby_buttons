@@ -1,4 +1,4 @@
-defmodule Messages.GetInfo do
+defmodule Service.Flic.Response.GetInfo do
   import ShorterMaps
 
   @moduledoc """
@@ -6,23 +6,12 @@ defmodule Messages.GetInfo do
   """
 
   @doc """
-  Get general information request binary.
-
-  ## Examples
-
-      iex> Messages.GetInfo.get_info_request()
-      <<1, 0, 0>>
-
-  """
-  def get_info_request(), do: <<1, 0, 0>>
-
-  @doc """
   Get general information from binary data.
 
   ## Examples
 
       iex> data = <<2, 48, 50, 137, 235, 39, 184, 0, 128, 255, 255, 0, 0, 4, 0, 93, 15, 117, 218, 228, 128, 78, 32, 117, 218, 228, 128, 80, 32, 117, 218, 228, 128, 95, 32, 117, 218, 228, 128>>
-      iex> Messages.GetInfo.get_info(data)
+      iex> Service.Flic.Response.GetInfo.get_info_response(data)
       %{
         controller_state: :attached,
         server_address: <<48, 50, 137, 235, 39, 184>>,
@@ -40,13 +29,13 @@ defmodule Messages.GetInfo do
       }
 
   """
-  def get_info(data) do
+  def get_info_response(data) do
     <<
-      status :: size(8),
-      server :: bytes-size(7),
-      connection :: bytes-size(5),
-      _button_count :: size(16),
-      addresses :: binary,
+      status::size(8),
+      server::bytes-size(7),
+      connection::bytes-size(5),
+      _button_count::bytes-size(2),
+      addresses::binary
     >> = data
 
     controller_state = controller_info(status)
@@ -56,7 +45,7 @@ defmodule Messages.GetInfo do
       max_pending_connections,
       max_concurrent_connected_buttons,
       current_pending_connections,
-      new_connections_allowed,
+      new_connections_allowed
     } = connection_info(connection)
 
     button_addresses = buttons_info(addresses, [])
@@ -77,20 +66,23 @@ defmodule Messages.GetInfo do
     case status do
       0 ->
         :detached
+
       1 ->
         :resetting
+
       2 ->
         :attached
     end
   end
 
   defp server_info(server) do
-    << address :: bytes-size(6), type :: size(8) >> = server
+    <<address::bytes-size(6), type::size(8)>> = server
 
     address_type =
       case type do
         0 ->
           :public
+
         _ ->
           :random
       end
@@ -100,10 +92,10 @@ defmodule Messages.GetInfo do
 
   defp connection_info(connection) do
     <<
-      max_pending :: size(8),
-      max_concurrent :: signed-size(16),
-      pending_connetions :: size(8),
-      new_allowed :: size(8)
+      max_pending::size(8),
+      max_concurrent::signed-size(16),
+      pending_connetions::size(8),
+      new_allowed::size(8)
     >> = connection
 
     new_allowed = new_allowed == 0
@@ -119,7 +111,7 @@ defmodule Messages.GetInfo do
   defp buttons_info(<<>>, acc), do: acc
 
   defp buttons_info(addresses, acc) do
-    << address :: bytes-size(6), addresses :: binary >> = addresses
+    <<address::bytes-size(6), addresses::binary>> = addresses
 
     buttons_info(addresses, [address | acc])
   end
