@@ -11,7 +11,8 @@ defmodule Service.Button do
 
   import Response.{
     GetInfo,
-    CreateChannel
+    Connection,
+    Button
   }
 
   import Service.Broadcast
@@ -39,18 +40,16 @@ defmodule Service.Button do
   end
 
   def handle_cast({:flic_message_received, msg}, state) do
-    Logger.info("Message Received: #{inspect(msg)}")
-
     {type, data} = get_parts(msg)
 
     action =
       case type do
         1 ->
           :handle_create_channel_data
-
         9 ->
           :handle_get_info_data
-
+        n when n in [4, 6] ->
+          :handle_button_info_data
         _ ->
           :handle_other_data
       end
@@ -63,7 +62,7 @@ defmodule Service.Button do
   def handle_cast({:handle_get_info_data, data}, state) do
     info = get_info_response(data)
 
-    Logger.info("Get Info: #{inspect(info)}")
+    Logger.debug("Get Info: #{inspect(info)}")
 
     GenServer.cast(self(), {:create_button_channels, info})
 
@@ -73,14 +72,20 @@ defmodule Service.Button do
   def handle_cast({:handle_create_channel_data, data}, state) do
     info = create_channel_response(data)
 
-    Logger.info("Create Channel: #{inspect(info)}")
+    Logger.debug("Create Channel: #{inspect(info)}")
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:handle_button_info_data, data}, state) do
+    info = button_info_response(data)
+
+    Logger.debug("Button Info: #{inspect(info)}")
 
     {:noreply, state}
   end
 
   def handle_cast({:handle_other_data, data}, state) do
-    Logger.info("Other Data: #{inspect(data)}")
-
     {:noreply, state}
   end
 
